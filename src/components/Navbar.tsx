@@ -4,20 +4,22 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const categories = [
-  { name: "সব", slug: "" },
-  { name: "চাল", slug: "chal" },
-  { name: "ডাল", slug: "dal" },
-  { name: "সবজি", slug: "sobji" },
-  { name: "মাছ", slug: "mach" },
-  { name: "মাংস", slug: "mangsho" },
-  { name: "ডিম", slug: "dim-dui" },
+  { name: "সব", slug: "", href: "/" },
+  { name: "চাল", slug: "chal", href: "/category/chal" },
+  { name: "ডাল", slug: "dal", href: "/category/dal" },
+  { name: "সবজি", slug: "sobji", href: "/category/sobji" },
+  { name: "মাছ", slug: "mach", href: "/category/mach" },
+  { name: "মাংস", slug: "mangsho", href: "/category/mangsho" },
+  { name: "ডিম", slug: "dim-dui", href: "/category/dim-dui" },
 ];
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -27,14 +29,38 @@ export default function Navbar() {
     }
 
     window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
 
   function closeMenu() {
     setMenuOpen(false);
+  }
+
+  function isActive(href: string) {
+    if (href === "/") return pathname === "/";
+    return pathname === href || pathname.startsWith(`${href}/`);
+  }
+
+  function categoryClass(href: string, mobile = false) {
+    const active = isActive(href);
+
+    if (mobile) {
+      return `rounded-lg px-3 py-3 text-center text-sm font-semibold transition ${
+        active
+          ? "bg-green-600 text-white shadow-sm"
+          : "bg-slate-50 text-slate-700 hover:bg-green-50 hover:text-green-700"
+      }`;
+    }
+
+    return `whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition lg:px-5 ${
+      active
+        ? "bg-green-600 text-white shadow-sm"
+        : "text-slate-600 hover:bg-green-50 hover:text-green-700"
+    }`;
   }
 
   return (
@@ -75,7 +101,6 @@ export default function Navbar() {
             >
               সাইন ইন
             </Link>
-
             <Link
               href="/signup"
               className="rounded-lg bg-green-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-green-700 sm:px-5"
@@ -101,15 +126,12 @@ export default function Navbar() {
           className="hidden overflow-x-auto pb-3 sm:block"
         >
           <div className="flex min-w-max items-center justify-center gap-1.5">
-            {categories.map((category, index) => (
+            {categories.map((category) => (
               <Link
                 key={category.name}
-                href={index === 0 ? "/" : `/category/${category.slug}`}
-                className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition lg:px-5 ${
-                  index === 0
-                    ? "bg-green-600 text-white shadow-sm"
-                    : "text-slate-600 hover:bg-green-50 hover:text-green-700"
-                }`}
+                href={category.href}
+                aria-current={isActive(category.href) ? "page" : undefined}
+                className={categoryClass(category.href)}
               >
                 {category.name}
               </Link>
@@ -126,16 +148,13 @@ export default function Navbar() {
               aria-label="মোবাইল ক্যাটাগরি"
               className="grid grid-cols-2 gap-2"
             >
-              {categories.map((category, index) => (
+              {categories.map((category) => (
                 <Link
                   key={category.name}
-                  href={index === 0 ? "/" : `/category/${category.slug}`}
+                  href={category.href}
                   onClick={closeMenu}
-                  className={`rounded-lg px-3 py-3 text-center text-sm font-semibold transition ${
-                    index === 0
-                      ? "bg-green-600 text-white"
-                      : "bg-slate-50 text-slate-700 hover:bg-green-50 hover:text-green-700"
-                  }`}
+                  aria-current={isActive(category.href) ? "page" : undefined}
+                  className={categoryClass(category.href, true)}
                 >
                   {category.name}
                 </Link>
@@ -150,7 +169,6 @@ export default function Navbar() {
               >
                 সাইন ইন
               </Link>
-
               <Link
                 href="/signup"
                 onClick={closeMenu}
