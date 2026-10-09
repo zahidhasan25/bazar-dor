@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import PriceTicker from "@/components/PriceTicker";
-import ProductCard from "@/components/ProductCard";
+import CategoryProductList from "@/components/CategoryProductList";
 import { getProducts } from "@/lib/api";
 
 type CategoryPageProps = {
@@ -21,18 +21,21 @@ export default async function CategoryPage({
     products = await getProducts();
   } catch {
     return (
-      <div className="min-h-screen bg-[#f1f7f2]">
+      <div className="min-h-screen bg-[#f1f7f2] text-[#17251c]">
         <Navbar />
+
         <main className="mx-auto max-w-6xl px-4 py-12">
           <h1 className="text-xl font-bold text-red-600">
             পণ্যের তথ্য লোড করা যায়নি
           </h1>
+
           <p className="mt-2 text-sm text-gray-600">
             API সার্ভারে সংযোগ হচ্ছে না। ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।
           </p>
+
           <Link
             href="/"
-            className="mt-4 inline-block font-bold text-green-700"
+            className="mt-4 inline-block font-bold text-green-700 hover:text-green-800"
           >
             ← হোম পেজে ফিরে যান
           </Link>
@@ -54,14 +57,17 @@ export default async function CategoryPage({
   return (
     <div className="min-h-screen bg-[#f1f7f2] text-[#17251c]">
       <Navbar />
+
       <PriceTicker products={products} />
 
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-5 sm:py-8 lg:px-6">
-        <nav className="mb-5 flex items-center gap-2 text-sm text-gray-500">
+        <nav className="mb-5 flex flex-wrap items-center gap-2 text-sm text-gray-500">
           <Link href="/" className="hover:text-green-700">
             হোম
           </Link>
+
           <span>/</span>
+
           <span className="font-semibold text-gray-800">
             {firstProduct.categoryNameBn}
           </span>
@@ -69,35 +75,30 @@ export default async function CategoryPage({
 
         <section className="mb-6 rounded-2xl border border-[#dce8df] bg-white p-5 shadow-sm sm:p-7">
           <p className="text-3xl">{firstProduct.categoryIcon}</p>
+
           <h1 className="mt-2 text-2xl font-black sm:text-3xl">
             {firstProduct.categoryNameBn}
           </h1>
+
           <p className="mt-2 text-sm text-gray-500">
             এই ক্যাটাগরিতে মোট {categoryProducts.length}টি পণ্য।
           </p>
         </section>
 
-        <h2 className="mb-4 text-lg font-extrabold">
-          পণ্যের তালিকা
-        </h2>
-
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {categoryProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        <CategoryProductList products={categoryProducts} />
 
         <Link
           href="/"
-          className="mt-8 inline-flex rounded-lg border border-[#dce8df] bg-white px-5 py-3 text-sm font-bold text-gray-700 hover:bg-green-50 hover:text-green-700"
+          className="mt-8 inline-flex rounded-lg border border-[#dce8df] bg-white px-5 py-3 text-sm font-bold text-gray-700 transition hover:bg-green-50 hover:text-green-700"
         >
           ← সব পণ্যে ফিরে যান
         </Link>
       </main>
 
       <footer className="mt-8 border-t border-[#dce8df] bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-5 text-xs text-gray-500 sm:px-5 lg:px-6">
-          বাজার দর — প্রয়োজনীয় পণ্যের দাম এক নজরে।
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-5 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between sm:px-5 lg:px-6">
+          <p>বাজার দর — প্রয়োজনীয় পণ্যের দাম এক নজরে।</p>
+          <p>সকল দাম সম্ভাব্য; বাজার অবস্থার ওপর নির্ভর করে পরিবর্তিত হয়।</p>
         </div>
       </footer>
     </div>
