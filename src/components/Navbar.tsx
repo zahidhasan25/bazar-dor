@@ -1,11 +1,13 @@
-
 "use client";
 
 import Image from "next/image";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { Menu, X, LogOut, UserRound } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+
+import { authClient } from "@/lib/auth-client";
 
 const categories = [
   { name: "সব", slug: "", href: "/" },
@@ -19,7 +21,16 @@ const categories = [
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
   const pathname = usePathname();
+  const router = useRouter();
+
+  const { data: session, isPending } = authClient.useSession();
+
+  const isLoggedIn = Boolean(session?.user);
+  const userName =
+    session?.user?.name || session?.user?.email || "ব্যবহারকারী";
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -29,7 +40,10 @@ export default function Navbar() {
     }
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   useEffect(() => {
@@ -63,6 +77,118 @@ export default function Navbar() {
     }`;
   }
 
+  async function handleSignOut() {
+    if (signingOut) return;
+
+    setSigningOut(true);
+
+    try {
+      const result = await authClient.signOut();
+
+      if (result.error) {
+        toast.error(
+          result.error.message || "লগ আউট করা যায়নি। আবার চেষ্টা করুন।",
+        );
+        return;
+      }
+
+      toast.success("সফলভাবে লগ আউট হয়েছে।");
+
+      closeMenu();
+      router.push("/");
+      router.refresh();
+    } catch {
+      toast.error("লগ আউট করা যায়নি। আবার চেষ্টা করুন।");
+    } finally {
+      setSigningOut(false);
+    }
+  }
+
+  function AuthButtons({ mobile = false }: { mobile?: boolean }) {
+    if (isPending) {
+      return (
+        <div className="px-3 py-2 text-sm text-slate-400">
+          অপেক্ষা করুন...
+        </div>
+      );
+    }
+
+    if (isLoggedIn) {
+      return (
+        <div
+          className={
+            mobile
+              ? "grid grid-cols-1 gap-2"
+              : "flex items-center gap-2"
+          }
+        >
+          <div
+            className={`flex min-w-0 items-center gap-2 rounded-lg px-3 py-2 ${
+              mobile ? "justify-center bg-green-50" : ""
+            }`}
+          >
+            <UserRound
+              size={18}
+              className="shrink-0 text-green-700"
+            />
+
+            <span className="max-w-40 truncate text-sm font-semibold text-slate-700">
+              {userName}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleSignOut}
+            disabled={signingOut}
+            className={`flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60 ${
+              mobile ? "w-full" : ""
+            }`}
+          >
+            <LogOut size={17} />
+            {signingOut ? "অপেক্ষা করুন..." : "লগ আউট"}
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        className={
+          mobile
+            ? "grid grid-cols-2 gap-2"
+            : "flex items-center gap-2"
+        }
+      >
+        <Link
+          href="/signin"
+          onClick={closeMenu}
+          aria-current={pathname === "/signin" ? "page" : undefined}
+          className={`rounded-lg px-3 py-2.5 text-center text-sm font-semibold transition ${
+            pathname === "/signin"
+              ? "bg-green-600 text-white shadow-sm"
+              : "text-slate-700 hover:bg-slate-50 hover:text-green-700"
+          }`}
+        >
+          সাইন ইন
+        </Link>
+
+        <Link
+          href="/signup"
+          onClick={closeMenu}
+          aria-current={pathname === "/signup" ? "page" : undefined}
+          className={`rounded-lg px-4 py-2.5 text-center text-sm font-bold shadow-sm transition sm:px-5 ${
+            pathname === "/signup"
+              ? "bg-green-600 text-white"
+              : "bg-green-50 text-green-700 hover:bg-green-100"
+          }`}
+        >
+          সাইন আপ
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <header className="relative z-40 border-b border-slate-200 bg-white">
       <div className="mx-auto w-full max-w-6xl px-3 sm:px-5 lg:px-6">
@@ -88,6 +214,7 @@ export default function Navbar() {
               <h1 className="truncate text-lg font-black tracking-tight text-[#172033] sm:text-2xl">
                 বাজার দর
               </h1>
+
               <p className="text-[10px] text-slate-500 sm:text-xs">
                 ২৪ আশ্বিন ১৪৩৩
               </p>
@@ -95,18 +222,7 @@ export default function Navbar() {
           </Link>
 
           <div className="hidden shrink-0 items-center gap-2 sm:flex">
-            <Link
-              href="/signin"
-              className="rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 hover:text-green-700"
-            >
-              সাইন ইন
-            </Link>
-            <Link
-              href="/signup"
-              className="rounded-lg bg-green-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-green-700 sm:px-5"
-            >
-              সাইন আপ
-            </Link>
+            <AuthButtons />
           </div>
 
           <button
@@ -130,7 +246,9 @@ export default function Navbar() {
               <Link
                 key={category.name}
                 href={category.href}
-                aria-current={isActive(category.href) ? "page" : undefined}
+                aria-current={
+                  isActive(category.href) ? "page" : undefined
+                }
                 className={categoryClass(category.href)}
               >
                 {category.name}
@@ -153,7 +271,9 @@ export default function Navbar() {
                   key={category.name}
                   href={category.href}
                   onClick={closeMenu}
-                  aria-current={isActive(category.href) ? "page" : undefined}
+                  aria-current={
+                    isActive(category.href) ? "page" : undefined
+                  }
                   className={categoryClass(category.href, true)}
                 >
                   {category.name}
@@ -161,21 +281,8 @@ export default function Navbar() {
               ))}
             </nav>
 
-            <div className="mt-3 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3">
-              <Link
-                href="/signin"
-                onClick={closeMenu}
-                className="rounded-lg border border-slate-200 px-3 py-3 text-center text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-              >
-                সাইন ইন
-              </Link>
-              <Link
-                href="/signup"
-                onClick={closeMenu}
-                className="rounded-lg bg-green-600 px-3 py-3 text-center text-sm font-bold text-white transition hover:bg-green-700"
-              >
-                সাইন আপ
-              </Link>
+            <div className="mt-3 border-t border-slate-100 pt-3">
+              <AuthButtons mobile />
             </div>
           </div>
         )}
