@@ -98,9 +98,19 @@ function SignInForm() {
     setLoading(true);
 
     try {
+      const socialCallbackURL = new URL(
+        callbackURL,
+        window.location.origin,
+      );
+
+      socialCallbackURL.searchParams.set(
+        "authSuccess",
+        provider,
+      );
+
       const result = await authClient.signIn.social({
         provider,
-        callbackURL,
+        callbackURL: `${socialCallbackURL.pathname}${socialCallbackURL.search}${socialCallbackURL.hash}`,
       });
 
       if (result.error) {

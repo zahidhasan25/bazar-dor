@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Toaster } from "react-hot-toast";
+import AuthSuccessToast from "@/components/AuthSuccessToast";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -57,6 +58,8 @@ export default function RootLayout({
     <html lang="bn">
       <body>
         {children}
+
+        <AuthSuccessToast />
 
         <Toaster
           position="top-center"
