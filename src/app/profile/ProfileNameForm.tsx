@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -45,11 +44,11 @@ export default function ProfileNameForm({
       const result = await response.json();
 
       if (!response.ok) {
-        toast.error(result.error || "নাম সংরক্ষণ করা যায়নি।");
+        toast.error(result.error || "নাম আপডেট করা যায়নি।");
         return;
       }
 
-      toast.success("নাম সফলভাবে সংরক্ষণ হয়েছে।");
+      toast.success("নাম সফলভাবে আপডেট হয়েছে।");
       router.refresh();
     } catch {
       toast.error("সংযোগে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
@@ -76,15 +75,15 @@ export default function ProfileNameForm({
         required
         placeholder="আপনার নাম লিখুন"
         autoComplete="name"
-        className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
+        className="w-full rounded-md border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
       />
 
       <button
         type="submit"
         disabled={saving}
-        className="w-full rounded-md bg-green-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
+        className="w-full rounded-md bg-green-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-green-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {saving ? "সংরক্ষণ হচ্ছে..." : "সংরক্ষণ"}
+        {saving ? "আপডেট হচ্ছে..." : "আপডেট"}
       </button>
     </form>
   );

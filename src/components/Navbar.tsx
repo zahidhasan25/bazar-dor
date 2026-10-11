@@ -8,7 +8,6 @@ import {
   LogOut,
   UserRound,
   ChevronDown,
-  CircleUserRound,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -25,6 +24,55 @@ const categories = [
   { name: "ডিম", href: "/category/dim-dui" },
 ];
 
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+
+  if (parts.length === 0) return "U";
+
+  return parts
+    .slice(0, 2)
+    .map((part) => part.charAt(0))
+    .join("")
+    .toUpperCase();
+}
+
+function Avatar({
+  image,
+  name,
+  className = "h-8 w-8",
+}: {
+  image?: string | null;
+  name: string;
+  className?: string;
+}) {
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [image]);
+
+  if (image && !imageFailed) {
+    return (
+      <img
+        src={image}
+        alt={`${name} প্রোফাইল ছবি`}
+        referrerPolicy="no-referrer"
+        onError={() => setImageFailed(true)}
+        className={`${className} shrink-0 rounded-full object-cover`}
+      />
+    );
+  }
+
+  return (
+    <span
+      aria-label={`${name} প্রোফাইল`}
+      className={`${className} flex shrink-0 items-center justify-center rounded-full bg-green-100 font-bold text-green-800`}
+    >
+      {getInitials(name)}
+    </span>
+  );
+}
+
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -35,10 +83,13 @@ export default function Navbar() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
 
-  const isLoggedIn = Boolean(session?.user);
+  const user = session?.user;
+  const isLoggedIn = Boolean(user);
+
   const userName =
-    session?.user?.name || session?.user?.email || "ব্যবহারকারী";
-  const userEmail = session?.user?.email || "";
+    user?.name?.trim() || user?.email || "ব্যবহারকারী";
+  const userEmail = user?.email || "";
+  const userImage = user?.image || null;
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -91,7 +142,8 @@ export default function Navbar() {
 
       if (result.error) {
         toast.error(
-          result.error.message || "লগ আউট করা যায়নি। আবার চেষ্টা করুন।",
+          result.error.message ||
+            "লগ আউট করা যায়নি। আবার চেষ্টা করুন।",
         );
         return;
       }
@@ -118,7 +170,13 @@ export default function Navbar() {
 
     if (!isLoggedIn) {
       return (
-        <div className={mobile ? "grid grid-cols-2 gap-2" : "flex items-center gap-1.5"}>
+        <div
+          className={
+            mobile
+              ? "grid grid-cols-2 gap-2"
+              : "flex items-center gap-1.5"
+          }
+        >
           <Link
             href="/signin"
             onClick={closeMenus}
@@ -142,12 +200,19 @@ export default function Navbar() {
       return (
         <div className="space-y-1.5">
           <div className="flex items-center gap-3 rounded-lg bg-green-50 p-3">
-            <CircleUserRound className="shrink-0 text-green-700" size={28} />
+            <Avatar
+              image={userImage}
+              name={userName}
+              className="h-10 w-10 text-sm"
+            />
+
             <div className="min-w-0">
               <p className="truncate text-sm font-bold text-slate-800">
                 {userName}
               </p>
-              <p className="truncate text-xs text-slate-500">{userEmail}</p>
+              <p className="truncate text-xs text-slate-500">
+                {userEmail}
+              </p>
             </div>
           </div>
 
@@ -182,9 +247,11 @@ export default function Navbar() {
           aria-haspopup="menu"
           className="flex max-w-56 items-center gap-2 rounded-full border border-slate-200 bg-white py-1 pl-1.5 pr-2.5 transition hover:border-green-300 hover:bg-green-50"
         >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-800">
-            <UserRound size={17} />
-          </span>
+          <Avatar
+            image={userImage}
+            name={userName}
+            className="h-8 w-8 text-xs"
+          />
 
           <span className="max-w-32 truncate text-sm font-semibold text-slate-700">
             {userName}
@@ -203,13 +270,21 @@ export default function Navbar() {
             role="menu"
             className="absolute right-0 top-full z-50 mt-2 w-60 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
           >
-            <div className="border-b border-slate-100 bg-green-50/70 p-3.5">
-              <p className="truncate text-sm font-bold text-slate-800">
-                {userName}
-              </p>
-              <p className="mt-1 truncate text-xs text-slate-500">
-                {userEmail}
-              </p>
+            <div className="flex items-center gap-3 border-b border-slate-100 bg-green-50/70 p-3.5">
+              <Avatar
+                image={userImage}
+                name={userName}
+                className="h-10 w-10 text-sm"
+              />
+
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold text-slate-800">
+                  {userName}
+                </p>
+                <p className="mt-1 truncate text-xs text-slate-500">
+                  {userEmail}
+                </p>
+              </div>
             </div>
 
             <div className="p-1.5">
@@ -296,7 +371,9 @@ export default function Navbar() {
               <Link
                 key={category.name}
                 href={category.href}
-                aria-current={isActive(category.href) ? "page" : undefined}
+                aria-current={
+                  isActive(category.href) ? "page" : undefined
+                }
                 className={`whitespace-nowrap rounded-md px-3.5 py-2 text-[13px] font-semibold transition ${
                   isActive(category.href)
                     ? "bg-green-700 text-white"
@@ -323,7 +400,9 @@ export default function Navbar() {
                   key={category.name}
                   href={category.href}
                   onClick={closeMenus}
-                  aria-current={isActive(category.href) ? "page" : undefined}
+                  aria-current={
+                    isActive(category.href) ? "page" : undefined
+                  }
                   className={`rounded-lg px-3 py-2.5 text-center text-sm font-semibold transition ${
                     isActive(category.href)
                       ? "bg-green-700 text-white"
