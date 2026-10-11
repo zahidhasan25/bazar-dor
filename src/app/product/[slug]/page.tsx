@@ -1,5 +1,7 @@
+
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { headers } from "next/headers";
 
 import Navbar from "@/components/Navbar";
 import PriceTicker from "@/components/PriceTicker";
@@ -8,6 +10,7 @@ import {
   formatBengaliNumber,
   unitName,
 } from "@/lib/bengali-number";
+import { auth } from "@/lib/auth";
 
 type ProductDetailsPageProps = {
   params: Promise<{ slug: string }>;
@@ -21,6 +24,17 @@ export default async function ProductDetailsPage({
   params,
 }: ProductDetailsPageProps) {
   const { slug } = await params;
+
+  // Verify the user's session on the server.
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session) {
+    redirect(
+      `/signin?callbackURL=${encodeURIComponent(`/product/${slug}`)}`
+    );
+  }
 
   let products;
 
@@ -77,8 +91,8 @@ export default async function ProductDetailsPage({
           markets.reduce(
             (total, market) =>
               total + (market.min + market.max) / 2,
-            0,
-          ) / markets.length,
+            0
+          ) / markets.length
         )
       : product.today;
 
@@ -155,7 +169,7 @@ export default async function ProductDetailsPage({
                   <span className="inline-flex shrink-0 items-center rounded-full bg-green-50 px-3 py-1.5 text-xs font-bold text-green-700">
                     ▼{" "}
                     {formatBengaliNumber(
-                      Math.abs(product.change.pct),
+                      Math.abs(product.change.pct)
                     )}
                     %
                   </span>
@@ -260,11 +274,17 @@ export default async function ProductDetailsPage({
                 <table className="w-full min-w-[520px] text-left text-sm">
                   <thead className="bg-[#f5f8f5] text-gray-600">
                     <tr>
-                      <th scope="col" className="whitespace-nowrap px-4 py-4 font-bold">
+                      <th
+                        scope="col"
+                        className="whitespace-nowrap px-4 py-4 font-bold"
+                      >
                         বাজার
                       </th>
 
-                      <th scope="col" className="whitespace-nowrap px-4 py-4 font-bold">
+                      <th
+                        scope="col"
+                        className="whitespace-nowrap px-4 py-4 font-bold"
+                      >
                         বিভাগ
                       </th>
 

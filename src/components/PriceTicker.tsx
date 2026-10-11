@@ -1,18 +1,12 @@
 import type { Product } from "@/lib/api";
-import {
-  formatBengaliNumber,
-  unitName,
-} from "@/lib/bengali-number";
+import { formatBengaliNumber, unitName } from "@/lib/bengali-number";
 
 type PriceTickerProps = {
   products: Product[];
 };
 
-export default function PriceTicker({
-  products,
-}: PriceTickerProps) {
+export default function PriceTicker({ products }: PriceTickerProps) {
   const tickerProducts = products.slice(0, 12);
-
   const items = [...tickerProducts, ...tickerProducts];
 
   return (
@@ -28,11 +22,9 @@ export default function PriceTicker({
               className="flex shrink-0 items-center gap-2 px-5 text-sm"
             >
               <span>{product.image}</span>
-
               <span className="font-semibold text-slate-800">
                 {product.nameBn}
               </span>
-
               <span className="font-bold text-slate-900">
                 {formatBengaliNumber(product.today)} টাকা/
                 {unitName(product.unit)
@@ -48,11 +40,7 @@ export default function PriceTicker({
 
               {isDown && (
                 <span className="font-bold text-red-500">
-                  ▼{" "}
-                  {formatBengaliNumber(
-                    Math.abs(product.change.pct),
-                  )}
-                  %
+                  ▼ {formatBengaliNumber(Math.abs(product.change.pct))}%
                 </span>
               )}
             </div>

@@ -2,79 +2,83 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Menu, X, LogOut, UserRound } from "lucide-react";
+import {
+  Menu,
+  X,
+  LogOut,
+  UserRound,
+  ChevronDown,
+  CircleUserRound,
+} from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-
 import { authClient } from "@/lib/auth-client";
 
 const categories = [
-  { name: "সব", slug: "", href: "/" },
-  { name: "চাল", slug: "chal", href: "/category/chal" },
-  { name: "ডাল", slug: "dal", href: "/category/dal" },
-  { name: "সবজি", slug: "sobji", href: "/category/sobji" },
-  { name: "মাছ", slug: "mach", href: "/category/mach" },
-  { name: "মাংস", slug: "mangsho", href: "/category/mangsho" },
-  { name: "ডিম", slug: "dim-dui", href: "/category/dim-dui" },
+  { name: "সব", href: "/" },
+  { name: "চাল", href: "/category/chal" },
+  { name: "ডাল", href: "/category/dal" },
+  { name: "সবজি", href: "/category/sobji" },
+  { name: "মাছ", href: "/category/mach" },
+  { name: "মাংস", href: "/category/mangsho" },
+  { name: "ডিম", href: "/category/dim-dui" },
 ];
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const router = useRouter();
-
   const { data: session, isPending } = authClient.useSession();
 
   const isLoggedIn = Boolean(session?.user);
   const userName =
     session?.user?.name || session?.user?.email || "ব্যবহারকারী";
+  const userEmail = session?.user?.email || "";
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setMenuOpen(false);
+        setUserMenuOpen(false);
+      }
+    }
+
+    function handleOutsideClick(event: MouseEvent) {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
+        setUserMenuOpen(false);
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("mousedown", handleOutsideClick);
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("mousedown", handleOutsideClick);
     };
   }, []);
 
   useEffect(() => {
     setMenuOpen(false);
+    setUserMenuOpen(false);
   }, [pathname]);
 
-  function closeMenu() {
+  function closeMenus() {
     setMenuOpen(false);
+    setUserMenuOpen(false);
   }
 
   function isActive(href: string) {
     if (href === "/") return pathname === "/";
     return pathname === href || pathname.startsWith(`${href}/`);
-  }
-
-  function categoryClass(href: string, mobile = false) {
-    const active = isActive(href);
-
-    if (mobile) {
-      return `rounded-lg px-3 py-3 text-center text-sm font-semibold transition ${
-        active
-          ? "bg-green-600 text-white shadow-sm"
-          : "bg-slate-50 text-slate-700 hover:bg-green-50 hover:text-green-700"
-      }`;
-    }
-
-    return `whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold transition lg:px-5 ${
-      active
-        ? "bg-green-600 text-white shadow-sm"
-        : "text-slate-600 hover:bg-green-50 hover:text-green-700"
-    }`;
   }
 
   async function handleSignOut() {
@@ -93,9 +97,8 @@ export default function Navbar() {
       }
 
       toast.success("সফলভাবে লগ আউট হয়েছে।");
-
-      closeMenu();
-      router.push("/");
+      closeMenus();
+      router.replace("/");
       router.refresh();
     } catch {
       toast.error("লগ আউট করা যায়নি। আবার চেষ্টা করুন।");
@@ -104,48 +107,66 @@ export default function Navbar() {
     }
   }
 
-  function AuthButtons({ mobile = false }: { mobile?: boolean }) {
+  function UserMenu({ mobile = false }: { mobile?: boolean }) {
     if (isPending) {
       return (
-        <div className="px-3 py-2 text-sm text-slate-400">
+        <span className="px-3 py-2 text-sm text-slate-400">
           অপেক্ষা করুন...
+        </span>
+      );
+    }
+
+    if (!isLoggedIn) {
+      return (
+        <div className={mobile ? "grid grid-cols-2 gap-2" : "flex items-center gap-1.5"}>
+          <Link
+            href="/signin"
+            onClick={closeMenus}
+            className="rounded-md px-3 py-2 text-center text-sm font-semibold text-slate-700 transition hover:bg-green-50 hover:text-green-700"
+          >
+            সাইন ইন
+          </Link>
+
+          <Link
+            href="/signup"
+            onClick={closeMenus}
+            className="rounded-md bg-green-700 px-3.5 py-2 text-center text-sm font-semibold text-white transition hover:bg-green-800"
+          >
+            সাইন আপ
+          </Link>
         </div>
       );
     }
 
-    if (isLoggedIn) {
+    if (mobile) {
       return (
-        <div
-          className={
-            mobile
-              ? "grid grid-cols-1 gap-2"
-              : "flex items-center gap-2"
-          }
-        >
-          <div
-            className={`flex min-w-0 items-center gap-2 rounded-lg px-3 py-2 ${
-              mobile ? "justify-center bg-green-50" : ""
-            }`}
-          >
-            <UserRound
-              size={18}
-              className="shrink-0 text-green-700"
-            />
-
-            <span className="max-w-40 truncate text-sm font-semibold text-slate-700">
-              {userName}
-            </span>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-3 rounded-lg bg-green-50 p-3">
+            <CircleUserRound className="shrink-0 text-green-700" size={28} />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-slate-800">
+                {userName}
+              </p>
+              <p className="truncate text-xs text-slate-500">{userEmail}</p>
+            </div>
           </div>
+
+          <Link
+            href="/profile"
+            onClick={closeMenus}
+            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-green-50"
+          >
+            <UserRound size={18} />
+            আমার প্রোফাইল
+          </Link>
 
           <button
             type="button"
             onClick={handleSignOut}
             disabled={signingOut}
-            className={`flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60 ${
-              mobile ? "w-full" : ""
-            }`}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60"
           >
-            <LogOut size={17} />
+            <LogOut size={18} />
             {signingOut ? "অপেক্ষা করুন..." : "লগ আউট"}
           </button>
         </div>
@@ -153,38 +174,68 @@ export default function Navbar() {
     }
 
     return (
-      <div
-        className={
-          mobile
-            ? "grid grid-cols-2 gap-2"
-            : "flex items-center gap-2"
-        }
-      >
-        <Link
-          href="/signin"
-          onClick={closeMenu}
-          aria-current={pathname === "/signin" ? "page" : undefined}
-          className={`rounded-lg px-3 py-2.5 text-center text-sm font-semibold transition ${
-            pathname === "/signin"
-              ? "bg-green-600 text-white shadow-sm"
-              : "text-slate-700 hover:bg-slate-50 hover:text-green-700"
-          }`}
+      <div className="relative" ref={userMenuRef}>
+        <button
+          type="button"
+          onClick={() => setUserMenuOpen((open) => !open)}
+          aria-expanded={userMenuOpen}
+          aria-haspopup="menu"
+          className="flex max-w-56 items-center gap-2 rounded-full border border-slate-200 bg-white py-1 pl-1.5 pr-2.5 transition hover:border-green-300 hover:bg-green-50"
         >
-          সাইন ইন
-        </Link>
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-100 text-green-800">
+            <UserRound size={17} />
+          </span>
 
-        <Link
-          href="/signup"
-          onClick={closeMenu}
-          aria-current={pathname === "/signup" ? "page" : undefined}
-          className={`rounded-lg px-4 py-2.5 text-center text-sm font-bold shadow-sm transition sm:px-5 ${
-            pathname === "/signup"
-              ? "bg-green-600 text-white"
-              : "bg-green-50 text-green-700 hover:bg-green-100"
-          }`}
-        >
-          সাইন আপ
-        </Link>
+          <span className="max-w-32 truncate text-sm font-semibold text-slate-700">
+            {userName}
+          </span>
+
+          <ChevronDown
+            size={15}
+            className={`shrink-0 text-slate-500 transition ${
+              userMenuOpen ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+
+        {userMenuOpen && (
+          <div
+            role="menu"
+            className="absolute right-0 top-full z-50 mt-2 w-60 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
+          >
+            <div className="border-b border-slate-100 bg-green-50/70 p-3.5">
+              <p className="truncate text-sm font-bold text-slate-800">
+                {userName}
+              </p>
+              <p className="mt-1 truncate text-xs text-slate-500">
+                {userEmail}
+              </p>
+            </div>
+
+            <div className="p-1.5">
+              <Link
+                href="/profile"
+                role="menuitem"
+                onClick={closeMenus}
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-green-50 hover:text-green-700"
+              >
+                <UserRound size={17} />
+                আমার প্রোফাইল
+              </Link>
+
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+              >
+                <LogOut size={17} />
+                {signingOut ? "অপেক্ষা করুন..." : "লগ আউট"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -192,64 +243,65 @@ export default function Navbar() {
   return (
     <header className="relative z-40 border-b border-slate-200 bg-white">
       <div className="mx-auto w-full max-w-6xl px-3 sm:px-5 lg:px-6">
-        <div className="flex min-h-[76px] items-center justify-between gap-2 sm:min-h-[88px] sm:gap-4">
+        <div className="flex min-h-[62px] items-center justify-between gap-3 sm:min-h-[66px]">
           <Link
             href="/"
-            onClick={closeMenu}
-            className="flex min-w-0 items-center gap-2 sm:gap-2.5"
+            onClick={closeMenus}
+            className="flex min-w-0 items-center gap-2"
             aria-label="বাজার দর হোম পেজ"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-600 shadow-sm sm:h-12 sm:w-12">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-green-700 sm:h-10 sm:w-10">
               <Image
                 src="/logo-icon.png"
                 alt=""
-                width={38}
-                height={38}
+                width={34}
+                height={34}
                 priority
-                className="h-8 w-8 object-contain sm:h-9 sm:w-9"
+                className="h-7 w-7 object-contain sm:h-8 sm:w-8"
               />
-            </div>
+            </span>
 
-            <div className="min-w-0">
-              <h1 className="truncate text-lg font-black tracking-tight text-[#172033] sm:text-2xl">
+            <span className="min-w-0">
+              <span className="block truncate text-lg font-black tracking-tight text-[#172033] sm:text-xl">
                 বাজার দর
-              </h1>
-
-              <p className="text-[10px] text-slate-500 sm:text-xs">
-                ২৪ আশ্বিন ১৪৩৩
-              </p>
-            </div>
+              </span>
+              <span className="block text-[10px] text-slate-500 sm:text-[11px]">
+                আজকের বাজার মূল্য
+              </span>
+            </span>
           </Link>
 
           <div className="hidden shrink-0 items-center gap-2 sm:flex">
-            <AuthButtons />
+            <UserMenu />
           </div>
 
           <button
             type="button"
             onClick={() => setMenuOpen((open) => !open)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-slate-700 transition hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 sm:hidden"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-slate-700 transition hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600 sm:hidden"
             aria-label={menuOpen ? "মেনু বন্ধ করুন" : "মেনু খুলুন"}
             aria-expanded={menuOpen}
             aria-controls="mobile-navigation"
           >
-            {menuOpen ? <X size={23} /> : <Menu size={23} />}
+            {menuOpen ? <X size={21} /> : <Menu size={21} />}
           </button>
         </div>
 
         <nav
           aria-label="পণ্যের ক্যাটাগরি"
-          className="hidden overflow-x-auto pb-3 sm:block"
+          className="hidden overflow-x-auto sm:block"
         >
-          <div className="flex min-w-max items-center justify-center gap-1.5">
+          <div className="flex min-w-max items-center gap-1 border-t border-slate-100 py-1.5">
             {categories.map((category) => (
               <Link
                 key={category.name}
                 href={category.href}
-                aria-current={
-                  isActive(category.href) ? "page" : undefined
-                }
-                className={categoryClass(category.href)}
+                aria-current={isActive(category.href) ? "page" : undefined}
+                className={`whitespace-nowrap rounded-md px-3.5 py-2 text-[13px] font-semibold transition ${
+                  isActive(category.href)
+                    ? "bg-green-700 text-white"
+                    : "text-slate-600 hover:bg-green-50 hover:text-green-700"
+                }`}
               >
                 {category.name}
               </Link>
@@ -260,7 +312,7 @@ export default function Navbar() {
         {menuOpen && (
           <div
             id="mobile-navigation"
-            className="border-t border-slate-100 py-4 sm:hidden"
+            className="border-t border-slate-100 py-3 sm:hidden"
           >
             <nav
               aria-label="মোবাইল ক্যাটাগরি"
@@ -270,11 +322,13 @@ export default function Navbar() {
                 <Link
                   key={category.name}
                   href={category.href}
-                  onClick={closeMenu}
-                  aria-current={
-                    isActive(category.href) ? "page" : undefined
-                  }
-                  className={categoryClass(category.href, true)}
+                  onClick={closeMenus}
+                  aria-current={isActive(category.href) ? "page" : undefined}
+                  className={`rounded-lg px-3 py-2.5 text-center text-sm font-semibold transition ${
+                    isActive(category.href)
+                      ? "bg-green-700 text-white"
+                      : "bg-slate-50 text-slate-700 hover:bg-green-50 hover:text-green-700"
+                  }`}
                 >
                   {category.name}
                 </Link>
@@ -282,7 +336,7 @@ export default function Navbar() {
             </nav>
 
             <div className="mt-3 border-t border-slate-100 pt-3">
-              <AuthButtons mobile />
+              <UserMenu mobile />
             </div>
           </div>
         )}
