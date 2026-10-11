@@ -1,11 +1,10 @@
-
 import { betterAuth } from "better-auth";
 import { Pool } from "pg";
 
 const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
-  throw new Error("DATABASE_URL is missing from .env.local");
+  throw new Error("DATABASE_URL is missing");
 }
 
 const pool = new Pool({
@@ -47,5 +46,8 @@ export const auth = betterAuth({
     },
   },
 
-  trustedOrigins: ["http://localhost:3000"],
+  trustedOrigins: [
+    "http://localhost:3000",
+    "https://bazar-dor-bd-two.vercel.app",
+  ],
 });
